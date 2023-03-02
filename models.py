@@ -11,8 +11,8 @@ book_author = Table('book_author',
                         Base.metadata,
                         Column('id', Integer, primary_key=True),
                         Column('author_id', ForeignKey('author.id')),
-                        Column('publisher_id', ForeignKey('publisher.id')),
-                        UniqueConstraint('author_id', 'publisher_id')
+                        Column('book_id', ForeignKey('book.id')),
+                        UniqueConstraint('author_id', 'book_id')
                         )
 
 
@@ -49,8 +49,6 @@ class Author(Base):
     # Gives a representation of a Person (for printing out)
     def __repr__(self):
         return f"<Author({self.author_name})>"
-
-
 
 
 # Sets up a Location table, this references "activities" via the person_activities table
