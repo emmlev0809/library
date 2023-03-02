@@ -1,63 +1,86 @@
-from sqlalchemy import Column, Integer, String, Table, UniqueConstraint, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, Integer, String, Date, Boolean, Table, UniqueConstraint, ForeignKey
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import relationship
 
-# Base is called an Abstract Base Class - our SQL Alchemy models will inherit from this class
 Base = declarative_base()
 
-# Sets up a link table with activity_id and person_id as foreign keys
-# Base.metadata is a container object that keeps together many different features of the database
-book_author = Table('book_author',
-                        Base.metadata,
-                        Column('id', Integer, primary_key=True),
-                        Column('author_id', ForeignKey('author.id')),
-                        Column('book_id', ForeignKey('book.id')),
-                        UniqueConstraint('author_id', 'book_id')
-                        )
+book_author = Table("book_author",
+                    Base.metadata,
+                    Column('book_id', ForeignKey('book.book_id')),
+                    Column('author_id', ForeignKey("author.author_id")),
+                    UniqueConstraint('book_id', 'author_id')
+                    )
+
+book_loan = Table("book_loan",
+                  Base.metadata,
+                  Column('book_id', ForeignKey('book.book_id')),
+                  Column('person_id', ForeignKey("person.person_id")),
+                  UniqueConstraint('book_id', 'person_id')
+                  )
 
 
-# Sets up an Activity table, this references "attendees" via the person_activities table
 class Book(Base):
-    __tablename__ = 'book'
+    __tablename__ = "book"
     book_id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String, nullable=False)
-    ISBN_number = Column(Integer, unique=True, nullable=False)
-    num_pages = Column(Integer, nullable=False)
-    publication_date = Column(Integer, nullable=False)
-    publication_id = Column(Integer, ForeignKey("publisher.id"), default=None)
+    title = Column(String)
+    isbn = Column(String, unique=True)
+    num_pages = Column(Integer)
+    publication_date = Column(Date)
+    publisher_id = Column(Integer, ForeignKey("publisher.publisher_id"))
 
-    author = relationship("Author",
-                             secondary=book_author,
-                             order_by='(Author.name)',
-                             back_populates="books")
+    authors = relationship("Author",
+                           secondary=book_author,
+                           order_by='(Author.author_name)',
+                           back_populates="works")
 
-    # Gives a representation of an Activity (for printing out)
+    borrowers = relationship("Person",
+                             secondary=book_loan,
+                             order_by='(Person.name)',
+                             back_populates='on_loan')
+
+    publisher = relationship("Publisher", back_populates="books")
+
     def __repr__(self):
-        return f"<Book({self.name})>"
+        return f"Book(title='{self.title}',"  \
+               f"isbn={self.isbn}), " \
+               f"num_pages={self.num_pages}, " \
+               f"publication_date={self.publication_date})"
 
 
-# Sets up a Person table, this references "activities" via the person_activities table
-class Author(Base):
-    __tablename__ = 'author'
-    author_id = Column(Integer, primary_key=True, autoincrement=True)
-    author_name = Column(String, nullable=False)
-    book = relationship("Book",
-                              secondary=book_author,
-                              order_by='Book.title',
-                              back_populates="book")
-
-    # Gives a representation of a Person (for printing out)
-    def __repr__(self):
-        return f"<Author({self.author_name})>"
-
-
-# Sets up a Location table, this references "activities" via the person_activities table
 class Publisher(Base):
-    __tablename__ = 'publisher'
+    __tablename__ = "publisher"
     publisher_id = Column(Integer, primary_key=True, autoincrement=True)
-    publisher_name = Column(String, nullable=False)
+    publisher_name = Column(String)
+    books = relationship("Book", back_populates="publisher")
 
-
-    # Gives a representation of a Person (for printing out)
     def __repr__(self):
-        return f"<Publisher({self.name})>"
+        return f"Publisher(publisher_name='{self.publisher_name}')"
+
+
+class Author(Base):
+    __tablename__ = "author"
+    author_id = Column(Integer, primary_key=True, autoincrement=True)
+    author_name = Column(String)
+
+    works = relationship("Book",
+                         secondary=book_author,
+                         order_by='(Book.title)',
+                         back_populates="authors")
+
+    def __repr__(self):
+        return f"Author(author_name='{self.author_name}'))"
+
+
+class Person(Base):
+    __tablename__ = "person"
+    person_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    membership_expiry = Column(Boolean)
+
+    on_loan = relationship("Book",
+                           secondary=book_loan,
+                           order_by='(Book.title)',
+                           back_populates="borrowers")
+
+    def __repr__(self):
+        return f"Person(name='{self.name}')"

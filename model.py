@@ -4,10 +4,11 @@ import re
 
 Base = declarative_base()
 
+
 class EmailAddress(Base):
     __tablename__ = 'email_address'
-    email_id = Column(Integer, primary_key = True, autoincrement = True)
-    email = Column(String, nullable = False)
+    email_id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String, nullable=False)
 
     def __repr__(self):
         return f"<Email{self.email}>"
